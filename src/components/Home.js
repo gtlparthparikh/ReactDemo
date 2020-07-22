@@ -5,56 +5,123 @@ export class Home extends Component {
         super(props)
 
         this.state = {
-            id: 0,
+            _id: "",
             name: "",
-            quantity: "",
+            price: "",
             updateId: 0,
             product: []
         }
     }
+    componentDidMount() {
+        fetch("http://localhost:3001/api/data", {
+            method: 'GET',
+            headers: {
+                'Content-type': 'application/json'
+            },
+        }).then(
+            res => res.json()
+        ).then(
+            (result) => {
+                this.setState({
+                    product: result
+                })
+            }
+        ).catch(err => console.log(err))
+    }
+
     handleChange = (event) => {
         this.setState({
             [event.target.name]: event.target.value
         });
     }
+
+    //function to add product
     saveProduct = () => {
-        let data = this.state.product;
-        data.push({
-            id: this.state.id,
-            name: this.state.name,
-            quantity: this.state.quantity
-        })
+        let data = JSON.stringify({ name: this.state.name, price: this.state.price })
+        fetch("http://localhost:3001/api/addProduct", {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: data
+        }).then(
+            res => res.json()
+        ).then(
+            (result) => {
+                console.log(result)
+                let product = this.state.product
+                product.push({
+                    _id: result._id,
+                    name: result.name,
+                    price: result.price
+                })
+                this.setState({
+                    product: product,
+                    _id: "",
+                    name: "",
+                    price: ""
+                })
+            }
+        ).catch(err => console.log(err))
+    }
+
+    EditProduct = (key) => {
+        const product = this.state.product[key]
         this.setState({
-            product: data,
-            id: this.state.id + 1,
-            name: "",
-            quantity: ""
+            name: product.name,
+            price: product.price,
+            _id: product._id
         })
     }
-    onEditProduct = (e) => {
-        let data = this.state.product[e]
-        this.setState({
-            name: data.name,
-            updateId: data.id,
-            quantity: data.quantity
-        })
+
+    OnEditProduct = () => {
+        let data = JSON.stringify({ _id: this.state._id, name: this.state.name, price: this.state.price })
+        fetch(`http://localhost:3001/api/updatedata`, {
+            method: 'PUT',
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: data
+        }).then(
+            res => {
+                // if (res.ok) {
+                //     const _product = this.state.product
+                //     _product.splice(key, 1);
+                //     this.setState({
+                //         product: _product
+                //     })
+                // } else {
+                //     throw new Error(res.json());
+                // }
+                res.json()
+            }
+        ).then(
+            (result) => {
+                console.log(result)
+            }
+        ).catch(err => console.log(err))
     }
-    saveEdit = () => {
-        let updateData = this.state.product;
-        updateData[this.state.updateId] = {
-            id: this.state.updateId,
-            name: this.state.name,
-            quantity: this.state.quantity
-        }
-        this.setState({
-            product: updateData,
-            name: "",
-            quantity: "",
-            updateId: ''
-        })
+
+    deleteProduct = (id, key) => {
+        fetch(`http://localhost:3001/api/deletedata/?id=${id}`, {
+            method: 'DELETE'
+        }).then(
+            res => {
+                if (res.ok) {
+                    const _product = this.state.product
+                    _product.splice(key, 1);
+                    this.setState({
+                        product: _product
+                    })
+                } else {
+                    throw new Error(res.json());
+                }
+            }
+        ).catch(err => console.log(err))
     }
     logout = () => {
-        localStorage.removeItem('isLoggedIn')
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
         this.props.history.push('/login')
     }
     render() {
@@ -62,7 +129,7 @@ export class Home extends Component {
             <div>
                 <div className="row mx-5">
                     <div className="col-sm-6 col-lg-6 col-xl-6">
-                        <h3>Athena</h3>
+                        <h2>User:{localStorage.getItem('user')}</h2>
                     </div>
                     <div className="col-sm-6 col-lg-6 col-xl-6">
                         <button className="btn btn-primary float-right" onClick={this.logout}>Logout</button>
@@ -74,7 +141,7 @@ export class Home extends Component {
                             <th>Action</th>
                             <th scope="col">id</th>
                             <th scope="col">Product Name</th>
-                            <th scope="col">Quantity</th>
+                            <th scope="col">Price</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -82,11 +149,12 @@ export class Home extends Component {
                             return (
                                 <tr key={key}>
                                     <td>
-                                        <button className="btn btn-warning" onClick={() => { this.onEditProduct(key) }}>Update</button>
+                                        <button className="btn btn-warning mx-3" onClick={() => { this.EditProduct(key) }}>Update</button>
+                                        <button className="btn btn-danger" onClick={() => { this.deleteProduct(item._id, key) }}>Delete</button>
                                     </td>
-                                    <td>{item.id + 1}</td>
+                                    <td>{key + 1}</td>
                                     <td>{item.name}</td>
-                                    <td>{item.quantity}</td>
+                                    <td>{item.price}</td>
                                 </tr>
                             )
                         })}
@@ -100,11 +168,11 @@ export class Home extends Component {
 
                     <div className="form-group">
                         <label>Product Quantity</label>
-                        <input type="number" name="quantity" value={this.state.quantity} onChange={this.handleChange} className="form-control" placeholder="Enter quantity" />
+                        <input type="number" name="price" value={this.state.price} onChange={this.handleChange} className="form-control" placeholder="Enter quantity" />
                     </div>
 
                     <button className="btn btn-primary btn-block" onClick={this.saveProduct}>Submit</button>
-                    <button className="btn btn-primary btn-block" onClick={this.saveEdit}>Edit</button>
+                    <button className="btn btn-primary btn-block" onClick={this.OnEditProduct}>Edit</button>
                 </div>
             </div>
         )

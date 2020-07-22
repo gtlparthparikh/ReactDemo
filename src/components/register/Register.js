@@ -17,17 +17,35 @@ class Register extends Component {
         });
     }
     registerUser = () => {
-        let data = this.state.users;
-        data.push({
-            email: this.state.email,
-            password: this.state.password
-        })
-        localStorage.setItem('users', JSON.stringify(data))
-        alert(`user ${this.state.email} registered Please Login`)
-        this.setState({
-            email: "",
-            password: ""
-        })
+        let data = {}
+        data.email=this.state.email;
+        data.password =this.state.password
+        //console.log(data)
+        // localStorage.setItem('users', JSON.stringify(data))
+        // alert(`user ${this.state.email} registered Please Login`)
+        // this.setState({
+        //     email: "",
+        //     password: ""
+        // })
+        fetch("http://localhost:3001/api/register", {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then(
+            res => res.json()
+        ).then(
+            (result) => {
+                localStorage.setItem('token',result)
+                localStorage.setItem('user',this.state.email)
+                this.setState({
+                    email:"",
+                    password:""
+                })
+                this.props.history.push("/")
+            }
+        ).catch(err => console.log(err))
     }
     render() {
         let { email, password, submitted } = this.state;

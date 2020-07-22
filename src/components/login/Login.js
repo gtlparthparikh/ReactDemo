@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import {Link,withRouter} from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 
 class Login extends Component {
     constructor(props) {
@@ -16,23 +16,56 @@ class Login extends Component {
             [event.target.name]: event.target.value
         });
     }
-    checkLogin = () =>{
-        let users = JSON.parse(localStorage.getItem('users'))
+    checkLogin = () => {
+        let users = JSON.stringify({ email: this.state.email, password: this.state.password })
         let flag = false
+        // let flag = false
         // console.log(users)
-        users.forEach(element => {
-            if(element.email === this.state.email){
-                if(element.password === this.state.password){
-                    flag=true
+        // users.forEach(element => {
+        //     if(element.email === this.state.email){
+        //         if(element.password === this.state.password){
+        //             flag=true
+        //         }
+        //     }
+        // });
+        // if(flag){
+        //     localStorage.setItem('isLoggedIn',true)
+        //     this.props.history.push("/")
+        // }else{
+        //     alert('unauthorized')
+        // }
+        
+        fetch("http://localhost:3001/api/login", {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: users
+        }).then(
+            res => {
+                if (res.status !== 200) {
+                    flag = true;
+                }
+                return res.json();
+            }
+        ).then(
+            (result) => {
+                if (flag) {
+                    console.log('kuch to gadbad hai daya')
+                    throw new Error(result)
+                } else {
+                    localStorage.setItem('token', result)
+                    localStorage.setItem('user', this.state.email)
+                    this.setState({
+                        email: "",
+                        password: ""
+                    })
+                    this.props.history.push("/")
                 }
             }
-        });
-        if(flag){
-            localStorage.setItem('isLoggedIn',true)
-            this.props.history.push("/")
-        }else{
-            alert('unauthorized')
-        }
+        ).catch((err) => {
+            alert(err)
+        })
     }
     render() {
         return (
